@@ -3,6 +3,7 @@ from scrapy.spiders import Spider
 from scrapy.selector import Selector
 from boohee.items import CategoryItem, FoodItem
 from scrapy.http import Request
+import re
 
 
 class CategorySpider(Spider):
@@ -19,11 +20,11 @@ class CategorySpider(Spider):
         for value in values:
             item = CategoryItem()
             group_url = value.xpath(
-                'div[@class="img-box"]//a/@href').extract_first().strip().encode('utf-8')
+                'div[@class="img-box"]//a/@href').extract_first().strip()
             item['group_url'] = "{}{}".format(self.SERVER_URL, group_url)
             item['group_type'] = group_url.split('/')[-1]
             item['thumb_img_url'] = value.xpath(
-                'div[@class="img-box"]//a//img/@src').extract_first().strip().encode('utf-8')
+                'div[@class="img-box"]//a//img/@src').extract_first().strip()
             item['name'] = value.xpath(
                 'div[@class="text-box"]//h3//a/text()').extract_first().strip()
             categorys.append(item)
@@ -41,18 +42,18 @@ class CategorySpider(Spider):
             item = FoodItem()
             item['category_id'] = category_id
             detail_url = value.xpath(
-                'div[@class="img-box pull-left"]//a/@href').extract_first().strip().encode('utf-8')
+                'div[@class="img-box pull-left"]//a/@href').extract_first().strip()
             item['detail_url'] = "{}{}".format(self.SERVER_URL, detail_url)
             item['code'] = detail_url.split('/')[-1]
             item['thumb_img_url'] = value.xpath(
-                'div[@class="img-box pull-left"]//a//img/@src').extract_first().strip().encode('utf-8')
+                'div[@class="img-box pull-left"]//a//img/@src').extract_first().strip()
             item['name'] = value.xpath(
                 'div[@class="text-box pull-left"]//h4//a/text()').extract_first().strip()
             calory_weight = value.xpath(
                 'div[@class="text-box pull-left"]//p/text()').extract_first().strip()
             temp = calory_weight.split(' ')
-            item['calory'] = filter(str.isdigit, str(temp[0].encode('utf-8')))
-            item['weight'] = filter(str.isdigit, str(temp[-1].encode('utf-8')))
+            item['calory'] = re.sub("\D",  "", str(temp[0])) 
+            item['weight'] = re.sub("\D", "", str(temp[-1])) 
             yield item
 
         next_page = response.xpath(
