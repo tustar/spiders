@@ -111,6 +111,9 @@ def launch(cursor, index):
             total_time = last(line)
         elif "WaitTime" in line:
             wait_time = last(line)
+        elif "Error:" in line:
+            print(line)
+            break
         else:
             continue
     result.close()
