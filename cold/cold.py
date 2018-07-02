@@ -62,10 +62,11 @@ def run():
         launch(cursor, i)
 
     rows = cursor.execute(QUERY_AVG_TIMES)
-    table = PrettyTable(["Avg ThisTime", "Avg TotalTime", "Avg WaitTime", "Updated At"])
+    table = PrettyTable(["Package", "Count", "Avg ThisTime", "Avg TotalTime", "Avg WaitTime", "Updated At"])
     updated_at = time.strftime("%Y-%m-%d %H:%M:%S")
     for row in rows:
-        table.add_row(['{:.2f}'.format(row[0]), '{:.2f}'.format(row[1]), '{:.2f}'.format(row[2]), updated_at])
+        table.add_row(
+            [package, count, '{:.2f}'.format(row[0]), '{:.2f}'.format(row[1]), '{:.2f}'.format(row[2]), updated_at])
         print("\033[1;32;32m" + str(table) + "\033[0m")
 
     # close db
@@ -131,8 +132,8 @@ def launch(cursor, index):
     parameters = (starting, status, activity, this_time, total_time, wait_time, created_at)
     cursor.execute(INSERT_TABLE_TIMES, parameters)
 
-    table = PrettyTable(["No.", "ThisTime", "TotalTime", "WaitTime", "CreatedAt"])
-    table.add_row([index, this_time, total_time, wait_time, created_at])
+    table = PrettyTable(["No.", "Package", "ThisTime", "TotalTime", "WaitTime", "CreatedAt"])
+    table.add_row([index, package, this_time, total_time, wait_time, created_at])
     print("\033[1;33;33m" + str(table) + "\033[0m")
 
     cmd = "adb shell am force-stop " + package
