@@ -23,7 +23,8 @@ main = args.main
 count = args.count
 seconds = args.seconds
 verbose = args.verbose
-print("package:" + package + ", main=" + main + ", count=" + str(count) + ", verbose=" + str(verbose))
+print("package:" + package + ", main=" + main + ", count=" + str(count) + ", seconds=" + str(
+    seconds) + ", verbose=" + str(verbose))
 
 # common value
 DB_NAME = "cold.db"
@@ -55,6 +56,7 @@ def run():
     cursor = conn.cursor()
     cursor.execute(DROP_TABLE_TIMES)
     cursor.execute(CREATE_TABLE_TIMES)
+
     init()
     for i in range(1, count + 1):
         launch(cursor, i)
@@ -64,7 +66,7 @@ def run():
     updated_at = time.strftime("%Y-%m-%d %H:%M:%S")
     for row in rows:
         table.add_row(['{:.2f}'.format(row[0]), '{:.2f}'.format(row[1]), '{:.2f}'.format(row[2]), updated_at])
-    print(table)
+        print("\033[1;32;32m" + str(table) + "\033[0m")
 
     # close db
     conn.commit()
@@ -72,6 +74,7 @@ def run():
 
 
 def init():
+    # force-stop
     cmd = "adb shell am force-stop " + package
     print("[Init]>>" + cmd)
     result = os.popen(cmd)
@@ -130,7 +133,7 @@ def launch(cursor, index):
 
     table = PrettyTable(["No.", "ThisTime", "TotalTime", "WaitTime", "CreatedAt"])
     table.add_row([index, this_time, total_time, wait_time, created_at])
-    print(table)
+    print("\033[1;33;33m" + str(table) + "\033[0m")
 
     cmd = "adb shell am force-stop " + package
     print("[" + str(index) + "]>>" + cmd)
