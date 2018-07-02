@@ -5,19 +5,23 @@ import argparse
 import os
 import sqlite3
 import time
+import sys
 from prettytable import PrettyTable
 
 # shell params
 parser = argparse.ArgumentParser("Code Start Time AVG Tool")
 parser.add_argument("-p", "--package", help="application package name", required=True)
 parser.add_argument("-m", "--main", help="application main activity", required=True)
-parser.add_argument("-c", "--count", help="cold start time", type=int, default=10)
+parser.add_argument("-c", "--count", help="cold start time, default is 10 times", type=int, default=10)
+parser.add_argument("-s", "--seconds", help="run cold start shell time interval(unit is seconds), default is 2 seconds",
+                    type=int, default=2)
 parser.add_argument("-v", "--verbose", help="verbosity",
                     action="store_true")
 args = parser.parse_args()
 package = args.package
 main = args.main
 count = args.count
+seconds = args.seconds
 verbose = args.verbose
 print("package:" + package + ", main=" + main + ", count=" + str(count) + ", verbose=" + str(verbose))
 
@@ -72,7 +76,7 @@ def init():
     print("[Init]>>" + cmd)
     result = os.popen(cmd)
     result.close()
-    time.sleep(2)
+    time.sleep(seconds)
     print()
 
 
@@ -98,8 +102,13 @@ def launch(cursor, index):
     cmd = "adb shell am start -W " + package + "/" + main
     print("[" + str(index) + "]>>" + cmd)
     result = os.popen(cmd)
-    for line in result.readlines():
-        if "Starting" in line:
+    has_error = False
+    lines = result.read().strip().split('\n')
+    for line in lines:
+        if "Error" in line:
+            print(line)
+            has_error = True
+        elif "Starting" in line:
             starting = last(line)
         elif "Status" in line:
             status = last(line)
@@ -111,12 +120,11 @@ def launch(cursor, index):
             total_time = last(line)
         elif "WaitTime" in line:
             wait_time = last(line)
-        elif "Error:" in line:
-            print(line)
-            break
         else:
             continue
     result.close()
+    if has_error:
+        sys.exit(0)
     parameters = (starting, status, activity, this_time, total_time, wait_time, created_at)
     cursor.execute(INSERT_TABLE_TIMES, parameters)
 
@@ -126,7 +134,7 @@ def launch(cursor, index):
 
     cmd = "adb shell am force-stop " + package
     print("[" + str(index) + "]>>" + cmd)
-    time.sleep(2)
+    time.sleep(seconds)
     result = os.popen(cmd)
     result.close()
     print()
