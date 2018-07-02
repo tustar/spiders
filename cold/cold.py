@@ -103,7 +103,7 @@ def launch(cursor, index):
     total_time = 0.0
     wait_time = 0.0
     created_at = time.strftime("%Y-%m-%d %H:%M:%S")
-    cmd = "adb shell am start -W " + package + "/" + main
+    cmd = "adb shell am start -S -W " + package + "/" + main + " -c android.intent.category.LAUNCHER -a android.intent.action.MAIN"
     print("[" + str(index) + "]>>" + cmd)
     result = os.popen(cmd)
     has_error = False
