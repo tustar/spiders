@@ -16,19 +16,19 @@ class BooheePipeline(object):
 
     def process_item(self, item, spider):
         if item.__class__ == CategoryItem:
-            values = []
-            values.append((item["group_type"], item["name"], item[
-                          "thumb_img_url"], item["group_url"]))
+            values = [(item["group_type"], item["name"], item[
+                "thumb_img_url"], item["group_url"])]
             cursor = self.conn.cursor()
             cursor.executemany(
-                """insert into category ("group_type", "name", "thumb_img_url", "group_url") values(?,?,?,?);""", values)
+                """insert into category ("group_type", "name", "thumb_img_url", "group_url") values(?,?,?,?);""",
+                values)
         elif item.__class__ == FoodItem:
-            values = []
-            values.append((item["category_id"], item["calory"], item[
-                          "weight"], item["code"], item["name"], item["thumb_img_url"], item["detail_url"]))
+            values = [(item["category_id"], item["calory"], item[
+                "weight"], item["code"], item["name"], item["name_en"], item["name_hk"])]
             cursor = self.conn.cursor()
             cursor.executemany(
-                """insert into food ("category_id" , "calory", "weight", "code","name", "thumb_img_url", "detail_url") values(?,?,?,?,?,?,?);""", values)
+                """insert into food ("category_id" , "calory", "weight", "code","name", "name_en","name_hk") values(?,?,?,?,?,?,?);""",
+                values)
         return item
 
     def open_spider(self, spider):
@@ -40,7 +40,8 @@ class BooheePipeline(object):
             self.conn.close()
             self.conn = None
 
-    def create_table(self, filename):
+    @staticmethod
+    def create_table(filename):
         conn = sqlite3.connect(filename)
         cursor = conn.cursor()
         # category
@@ -61,8 +62,8 @@ class BooheePipeline(object):
                 "weight" REAL NOT NULL,
                 "code" TEXT NOT NULL,
                 "name" TEXT NOT NULL,
-                "thumb_img_url" TEXT NOT NULL,
-                "detail_url" TEXT NOT NULL
+                "name_en" TEXT NOT NULL,
+                "name_hk" TEXT NOT NULL
             );""")
         # commit
         conn.commit()

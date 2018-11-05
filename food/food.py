@@ -11,8 +11,6 @@ logging.basicConfig(level=logging.DEBUG,
 DB_NAME = "food.db"
 SELECT_SQL = "SELECT * FROM food WHERE name LIKE '%又叫%'"
 
-''''''
-
 
 def analysis_food_db():
     # open db
@@ -20,10 +18,10 @@ def analysis_food_db():
     cursor = conn.cursor()
     cursor.execute(SELECT_SQL)
     rows = cursor.fetchall()
-    sols = []
+    sqls = []
     comment = "Update %d cn(hk) name" % len(rows)
     logging.debug(comment)
-    sols.append("-- %s" % comment)
+    sqls.append("-- %s" % comment)
     for row in rows:
         id = row[0]
         # category_id = row[1]
@@ -35,10 +33,12 @@ def analysis_food_db():
         name_hk = row[7]
         new_name = update_name(id, name)
         new_name_hk = update_name(id, name_hk)
-        sols.append("-- id:%d cn: [%s => %s], hk: [%s => %s]" % (id, name, new_name, name_hk, new_name_hk))
-        sols.append("UPDATE food SET name='%s', name_hk='%s' WHERE id=%d;" % (new_name, new_name_hk, id))
+        sqls.append("-- id:%d cn: [%s => %s], hk: [%s => %s]" % (id, name, new_name, name_hk, new_name_hk))
+        update_sql = "UPDATE food SET name='%s', name_hk='%s' WHERE id=%d;" % (update_sql_name(new_name), update_sql_name(new_name_hk), id)
+        sqls.append(update_sql)
+        cursor.execute(update_sql)
 
-    write_update_sql(sols)
+    write_update_sql(sqls)
 
     # close db
     conn.commit()
@@ -46,16 +46,21 @@ def analysis_food_db():
 
 
 def update_name(id, name):
-    new_name = name.replace("，又叫...", "")\
-        .replace("又叫", "")\
-        .replace("...", "")\
+    new_name = name.replace("，又叫...", "") \
+        .replace("又叫", "") \
+        .replace("...", "") \
         .replace("、", "，")
     logging.debug("%d:[%s => %s]" % (id, name, new_name))
     return new_name
 
 
+def update_sql_name(name):
+    new_name = name.replace("'", "''")
+    return new_name
+
+
 def write_update_sql(sqls):
-    filename = 'update_food_name.sql'
+    filename = 'food_db_migration_1_2.sql'
     with open(filename, 'w') as f:
         for sql in sqls:
             f.write("%s\n" % sql)

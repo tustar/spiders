@@ -21,5 +21,5 @@ class FoodItem(Item):
     weight = Field()
     code = Field()
     name = Field()
-    thumb_img_url = Field()
-    detail_url = Field()
+    name_en = Field()
+    name_hk = Field()
