@@ -4,67 +4,57 @@
 #
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
-import sqlite3
+import pymysql
+import pymysql.cursors
+import logging
+from twisted.enterprise import adbapi
 from boohee.items import CategoryItem, FoodItem
 
 
 class BooheePipeline(object):
 
-    def __init__(self):
-        self.conn = None
-        self.filename = "boohee.db"
+    def __init__(self, dbpool):
+        self.dbpool = dbpool
+
+    @classmethod
+    def from_settings(cls, settings):
+        args = dict(
+            host=settings['MYSQL_HOST'],
+            db=settings['MYSQL_DBNAME'],
+            user=settings['MYSQL_USER'],
+            passwd=settings['MYSQL_PASSWD'],
+            charset='utf8',
+            cursorclass=pymysql.cursors.DictCursor,
+            use_unicode=True)
+
+        dbpool = adbapi.ConnectionPool("pymysql", **args)
+        return cls(dbpool)
 
     def process_item(self, item, spider):
-        if item.__class__ == CategoryItem:
-            values = [(item["group_type"], item["name"], item[
-                "thumb_img_url"], item["group_url"])]
-            cursor = self.conn.cursor()
-            cursor.executemany(
-                """insert into category ("group_type", "name", "thumb_img_url", "group_url") values(?,?,?,?);""",
-                values)
-        elif item.__class__ == FoodItem:
-            values = [(item["category_id"], item["calory"], item[
-                "weight"], item["code"], item["name"], item["name_en"], item["name_hk"])]
-            cursor = self.conn.cursor()
-            cursor.executemany(
-                """insert into food ("category_id" , "calory", "weight", "code","name", "name_en","name_hk") values(?,?,?,?,?,?,?);""",
-                values)
+        logging.debug(item)
+        query = self.dbpool.runInteraction(self.insert, item)
+        query.addErrback(self.handler_error)
         return item
 
     def open_spider(self, spider):
-        self.conn = self.create_table(self.filename)
+        query = self.dbpool.runInteraction(self.create_table)
+        query.addErrback(self.handler_error)
 
     def close_spider(self, spider):
-        if self.conn:
-            self.conn.commit()
-            self.conn.close()
-            self.conn = None
+        self.dbpool.close()
 
     @staticmethod
-    def create_table(filename):
-        conn = sqlite3.connect(filename)
-        cursor = conn.cursor()
+    def handler_error(error):
+        logging.error('Error-DB::CategoryItem %s' % repr(error))
+
+    @staticmethod
+    def insert(cursor, item):
+        insert_sql, params = item.get_insert_sql()
+        cursor.execute(insert_sql, params)
+
+    @staticmethod
+    def create_table(cursor):
         # category
-        cursor.execute("""DROP TABLE IF EXISTS "category";""")
-        cursor.execute("""CREATE TABLE "category" (
-            "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-            "group_type" TEXT NOT NULL,
-            "name" TEXT NOT NULL,
-            "thumb_img_url" TEXT NOT NULL,
-             "group_url" TEXT NOT NULL
-        );""")
+        cursor.execute(CategoryItem.create_table)
         # food
-        cursor.execute("""DROP TABLE IF EXISTS "food";""")
-        cursor.execute("""CREATE TABLE "food" (
-                "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "category_id" INTEGER NOT NULL,
-                "calory" REAL NOT NULL,
-                "weight" REAL NOT NULL,
-                "code" TEXT NOT NULL,
-                "name" TEXT NOT NULL,
-                "name_en" TEXT NOT NULL,
-                "name_hk" TEXT NOT NULL
-            );""")
-        # commit
-        conn.commit()
-        return conn
+        cursor.execute(FoodItem.create_table)

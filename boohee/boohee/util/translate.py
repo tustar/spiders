@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import requests
 import hashlib
-import random
 import json
+import logging
+import random
+import requests
 
 from boohee.util.landconv import Converter
 
@@ -19,9 +20,7 @@ def chs_to_cht(name_cn):
     return Converter('zh-hant').convert(name_cn)
 
 
-def chs_to_en(name_cn):
-    # appKey = 'XXXXX'  # 应用ID，进行注册后可自动获得
-    # secretKey = 'XXXXX'  # 应用密钥，进行注册后可自动获得
+def chs_to_en(q):
     appKey = '7f9884b758c30ead'
     secretKey = 'vbsEtgcLZzCrtdZR9Zxdnb9diKhbU8Hx'
     url = 'http://openapi.youdao.com/api'
@@ -29,14 +28,20 @@ def chs_to_en(name_cn):
     toLang = 'EN'
     salt = random.randint(1, 10)  # 中译英
 
-    sign1 = appKey + name_cn + str(salt) + secretKey
+    sign1 = appKey + q + str(salt) + secretKey
     sign = hashlib.md5(sign1.encode(encoding='utf-8')).hexdigest()
-    myurl = url + '?q=' + name_cn + '&from=' + fromLang + '&to=' + toLang + '&salt=' + str(salt) \
+    myurl = url + '?q=' + q + '&from=' + fromLang + '&to=' + toLang + '&salt=' + str(salt) \
             + '&appKey=' + appKey + '&sign=' + sign
+    logging.debug(myurl)
 
-    r = requests.get(myurl)
-    json_data = json.loads(r.text)
-    print(json_data)
-    name_en = json_data['translation'][0]
-    # result = json_data['web'][0]['value'][0]
-    return name_en
+    try:
+        response = requests.get(myurl)
+        json_data = json.loads(response.text)
+        result = json_data['translation'][0]
+        return result
+    except Exception as e:
+        print(e)
+    finally:
+        pass
+
+    return ''
