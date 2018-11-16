@@ -5,8 +5,7 @@ import json
 import logging
 import random
 import requests
-
-from boohee.util.landconv import Converter
+import zhconv
 
 
 def update_name(name_cn):
@@ -17,7 +16,7 @@ def update_name(name_cn):
 
 
 def chs_to_cht(name_cn):
-    return Converter('zh-hant').convert(name_cn)
+    return zhconv.convert(name_cn, 'zh-hant')
 
 
 def chs_to_en(q):

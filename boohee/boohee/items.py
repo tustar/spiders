@@ -50,7 +50,7 @@ class FoodItem(Item):
     thumb_img_url = Field()
     detail_url = Field()
 
-    create_table = """CREATE TABLE IF NOT EXISTS `food` (
+    create_table = """CREATE TABLE IF NOT EXISTS `food_bak` (
             `id` INT NOT NULL AUTO_INCREMENT,
             `category_id` INT NOT NULL,
             `calory` FLOAT NOT NULL,
